@@ -1,46 +1,45 @@
 import React, { useState } from "react";
 import Types from "../config/types";
 import { v4 as uuidv4 } from "uuid";
-const Loader = ({ ...props }) => {
-  const { element, addChild, removeTree } = props;
-  const [loaderType, setLoaderType] = useState("");
-  const renderTypes = () => {
-    return Object.keys(Types).map(function (key) {
-      return (
-        <option key={key} value={key}>
-          {Types[key]["name"]}
-        </option>
-      );
-    });
-  };
-  return (
-    <div key={uuidv4()}>
-      {element.component}
-      <select value={loaderType} onChange={(e) => addChild(e, element.id)}>
-        <option value="">Select Type</option>
-        {renderTypes()}
-      </select>
+import DropZone from "./DropZone";
+import { useDrag } from "react-dnd";
+import { ItemTypes } from "./DraggableItem";
+const Loader = ({ element, handleDrop }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.Components,
+    end: (item, monitor) => {
+      const dropResult = monitor.getDropResult();
+      if ((item, dropResult)) {
+        handleDrop(element.id, dropResult.id);
+      }
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+      handlerId: monitor.getHandlerId(),
+    }),
+  }));
+  const opacity = isDragging ? 0.4 : 1;
 
+  return (
+    <div ref={drag}>
+      {element.component}
       <div>
         {element.children.map((child, chidx) => {
           return (
             <div key={uuidv4()}>
-              <button
+              {/* <button
                 onClick={() => removeTree(child.id)}
                 style={{ color: "red" }}
               >
                 Remove
-              </button>
-              <Loader
-                key={chidx}
-                idx={chidx}
-                addChild={addChild}
-                element={child}
-                removeTree={removeTree}
-              />
+              </button> */}
+              <Loader key={chidx} handleDrop={handleDrop} element={child} />
             </div>
           );
         })}
+      </div>
+      <div>
+        <DropZone id={element.id} />
       </div>
     </div>
   );
